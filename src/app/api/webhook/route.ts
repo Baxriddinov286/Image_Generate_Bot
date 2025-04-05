@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Telegraf, Context, Markup } from "telegraf";
+// @ts-expect-error: Markup hali ishlatilmayapti, keyin ishlatilishi mumkin
+// import { Markup } from "telegraf";
+import { Telegraf, Context } from "telegraf";
 import { createCanvas, loadImage, registerFont } from "canvas";
-// @ts-ignore
+// @ts-expect-error: bwip-js default export emas
 import bwipJs from "bwip-js";
 import path from "path";
 
@@ -41,6 +43,7 @@ bot.start(async (ctx: Context) => {
     step: Steps.UPLOAD_MAIN_PHOTO,
     photos: [],
     price: null,
+    url: null,
   };
   await ctx.reply("👋 Assalomu alaykum! Asosiy rasmni yuboring.");
 });
@@ -148,6 +151,7 @@ bot.on("message", async (ctx: Context) => {
         step: Steps.UPLOAD_MAIN_PHOTO,
         photos: [],
         price: null,
+        url: null,
       };
       await ctx.reply(
         "🔄 Yangi Rasm yaratish uchun avval asosiy rasmni yuboring."
@@ -162,7 +166,7 @@ async function createCollage(
   photos: string[],
   eanCode: string,
   description: string,
-  price: number
+  price: number | null
 ) {
   const images = await Promise.all(
     photos.map(async (fileId) => {
@@ -182,17 +186,14 @@ async function createCollage(
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-  // Asosiy tasvirlarni
   ctx.drawImage(images[0], 10, 10, 167, 189);
   ctx.drawImage(images[1], 187, 10, 84, 90);
   ctx.drawImage(images[2], 187, 109, 84, 90);
 
-  // image.png
   ctx.globalAlpha = 0.3;
   ctx.drawImage(codeImg, 10, 210, 167, 37);
   ctx.globalAlpha = 1.0;
 
-  // narx
   const fontPath = path.join(
     process.cwd(),
     "public",
@@ -201,7 +202,7 @@ async function createCollage(
   );
   registerFont(fontPath, { family: "Oxanium" });
 
-  if (price) {
+  if (price !== null) {
     ctx.fillStyle = "#000";
     ctx.font = `bold 36px "Oxanium"`;
     ctx.textAlign = "left";
@@ -209,7 +210,6 @@ async function createCollage(
     ctx.fillText(price.toString(), 15, 207, 167);
   }
 
-  // Shtrix-kodni yaratish va joylashtirish
   const barcodeBuffer = await bwipJs.toBuffer({
     bcid: "code128",
     text: eanCode.toString(),
@@ -222,11 +222,9 @@ async function createCollage(
   const barcodeImg = await loadImage(barcodeBuffer);
   ctx.drawImage(barcodeImg, 187, 214, 84, 37);
 
-  // Tavsif matni uchun fon
   ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
   ctx.fillRect(10, 250, 261, 98);
 
-  // Tavsif matnini joylashtirish
   ctx.fillStyle = "#000";
   ctx.font = "12px Arial";
   wrapText(ctx, description, 15, 290, 251, 15);
@@ -246,8 +244,8 @@ function wrapText(
   let line = "";
 
   for (let i = 0; i < words.length; i++) {
-    let testLine = line + words[i] + " ";
-    let testWidth = ctx.measureText(testLine).width;
+    const testLine = line + words[i] + " ";
+    const testWidth = ctx.measureText(testLine).width;
     if (testWidth > maxWidth && i > 0) {
       ctx.fillText(line, x, y);
       line = words[i] + " ";
