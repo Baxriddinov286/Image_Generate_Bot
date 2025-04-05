@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-// @ts-expect-error: Markup hali ishlatilmayapti, keyin ishlatilishi mumkin
 // import { Markup } from "telegraf";
 import { Telegraf, Context } from "telegraf";
 import { createCanvas, loadImage, registerFont } from "canvas";
